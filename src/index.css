@@ -1,0 +1,41 @@
+:root {
+  --bg: #fff6ef;
+  --ink: #1c1410;
+  --muted: #7c655c;
+  --orange: #e85d04;
+  --orange-deep: #c2410c;
+  --interest: #292018;
+  --line: #f0d5c6;
+  --soft: #fff1e6;
+  --card: #ffffff;
+  --danger: #9a3412;
+  font-family: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 420px at 8% -10%, rgba(232, 93, 4, 0.18), transparent 60%),
+    radial-gradient(680px 360px at 100% 0%, rgba(232, 93, 4, 0.1), transparent 55%),
+    var(--bg);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}

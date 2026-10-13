@@ -7,16 +7,23 @@
  * r = annualRatePercent / 12 / 100
  */
 export function calculateEmi(principal, annualRatePercent, months) {
-  if (!(principal > 0) || !(annualRatePercent >= 0) || !(months > 0)) {
+  if (!(principal >= 0) || !(annualRatePercent >= 0) || !(months > 0)) {
     return null
   }
 
   const monthlyRate = annualRatePercent / 12 / 100
+  if (monthlyRate === 0) {
+    return {
+      emi: roundMoney(principal / months),
+      principal,
+      interest: 0,
+      total: principal,
+    }
+  }
+
   const rawEmi =
-    monthlyRate === 0
-      ? principal / months
-      : (principal * monthlyRate * (1 + monthlyRate) ** months) /
-        ((1 + monthlyRate) ** months - 1)
+    (principal * monthlyRate * (1 + monthlyRate) ** months) /
+    ((1 + monthlyRate) ** months - 1)
 
   const emi = roundMoney(rawEmi)
   const total = roundMoney(emi * months)

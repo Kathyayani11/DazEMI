@@ -12,7 +12,9 @@ import {
   formatMoney,
   formatNumber,
 } from './currencies.js'
+import { Donut } from './Donut.jsx'
 import { deleteCalculation, loadHistory, saveCalculation } from './history.js'
+import { LeasePanel } from './LeasePanel.jsx'
 import './App.css'
 
 function formatSavedDate(iso) {
@@ -87,48 +89,15 @@ function termToMonths(term, unit) {
   return unit === 'years' ? term * 12 : term
 }
 
-function Donut({ principal, interest }) {
-  const total = principal + interest
-  const radius = 62
-  const circumference = 2 * Math.PI * radius
-  const principalShare = total > 0 ? principal / total : 0
-  const principalArc = principalShare * circumference
-  const principalPct = Math.round(principalShare * 100)
-
-  return (
-    <div className="donut-wrap" aria-hidden="true">
-      <svg className="donut" viewBox="0 0 168 168">
-        <circle cx="84" cy="84" r={radius} fill="none" stroke="#292018" strokeWidth="18" />
-        <circle
-          className="donut-arc"
-          cx="84"
-          cy="84"
-          r={radius}
-          fill="none"
-          stroke="#E85D04"
-          strokeWidth="18"
-          strokeDasharray={`${principalArc} ${circumference - principalArc}`}
-          transform="rotate(-90 84 84)"
-        />
-      </svg>
-      <div className="donut-center">
-        <strong>{principalPct}%</strong>
-        <span>principal</span>
-      </div>
-    </div>
-  )
-}
-
-function App() {
-  const [currencyId, setCurrencyId] = useState('INR')
-  const [loanText, setLoanText] = useState(String(CURRENCIES.INR.loanStart))
-  const [rateText, setRateText] = useState(String(CURRENCIES.INR.rateStart))
+function FinancePanel() {
+  const [loanText, setLoanText] = useState(String(CURRENCIES.USD.loanStart))
+  const [rateText, setRateText] = useState(String(CURRENCIES.USD.rateStart))
   const [termText, setTermText] = useState(String(START_YEARS))
   const [termUnit, setTermUnit] = useState('years')
   const [activeField, setActiveField] = useState(null)
   const [history, setHistory] = useState(() => loadHistory())
 
-  const currency = CURRENCIES[currencyId]
+  const currency = CURRENCIES.USD
   const loanMessage = loanError(loanText, currency)
   const rateMessage = rateError(rateText)
   const termMessage = termError(termText, termUnit)
@@ -146,17 +115,6 @@ function App() {
   const termSlider = term ?? (termUnit === 'years' ? YEAR_MIN : MONTH_MIN)
   const termMin = termUnit === 'years' ? YEAR_MIN : MONTH_MIN
   const termMax = termUnit === 'years' ? YEAR_MAX : MONTH_MAX
-
-  function selectCurrency(nextId) {
-    if (nextId === currencyId) return
-    const next = CURRENCIES[nextId]
-    setCurrencyId(nextId)
-    setLoanText(String(next.loanStart))
-    setRateText(String(next.rateStart))
-    setTermText(String(START_YEARS))
-    setTermUnit('years')
-    setActiveField(null)
-  }
 
   function selectTermUnit(nextUnit) {
     if (nextUnit === termUnit) return
@@ -190,7 +148,7 @@ function App() {
     if (!result || loan === null || rate === null || term === null || months === null) return
     setHistory(
       saveCalculation({
-        currency: currencyId,
+        currency: 'USD',
         loan,
         rate,
         unit: termUnit,
@@ -205,7 +163,6 @@ function App() {
   }
 
   function handleRestore(item) {
-    setCurrencyId(item.currency)
     setLoanText(String(item.loan))
     setRateText(String(item.rate))
     setTermText(String(item.term))
@@ -219,38 +176,13 @@ function App() {
   }
 
   return (
-    <main className="page">
-      <header className="header">
-        <div>
-          <h1 className="brand">
-            Daz<span>EMI</span>
-          </h1>
-          <p className="tagline">See your monthly loan payment as you move the sliders.</p>
-        </div>
-        <div className="currency-switch" role="group" aria-label="Currency">
-          <button
-            type="button"
-            aria-pressed={currencyId === 'INR'}
-            onClick={() => selectCurrency('INR')}
-          >
-            ₹ Rupees
-          </button>
-          <button
-            type="button"
-            aria-pressed={currencyId === 'USD'}
-            onClick={() => selectCurrency('USD')}
-          >
-            $ Dollars
-          </button>
-        </div>
-      </header>
-
+    <>
       <div className="layout">
         <section className="card" aria-label="Loan inputs">
           <div className="field">
             <label htmlFor="loan">Loan amount</label>
             <div className="input-wrap">
-              <span className="prefix">{currency.id === 'INR' ? '₹' : '$'}</span>
+              <span className="prefix">$</span>
               <input
                 id="loan"
                 inputMode="decimal"
@@ -415,7 +347,7 @@ function App() {
               </ul>
 
               <div className="chart-block">
-                <Donut principal={result.principal} interest={result.interest} />
+                <Donut primary={result.principal} secondary={result.interest} label="principal" />
                 <ul className="legend">
                   <li>
                     <span className="swatch principal" />
@@ -432,8 +364,9 @@ function App() {
             </>
           ) : (
             <p className="empty-note">
-              Enter a loan amount, yearly interest rate, and term inside the allowed range to see
-              your EMI.
+              {months === 0
+                ? 'Enter a term of at least 1 month to see your EMI.'
+                : 'Enter a loan amount, yearly interest rate, and term inside the allowed range to see your EMI.'}
             </p>
           )}
 
@@ -501,6 +434,59 @@ function App() {
           </ul>
         )}
       </section>
+    </>
+  )
+}
+
+function App() {
+  const [tab, setTab] = useState('finance')
+
+  return (
+    <main className="page">
+      <header className="header">
+        <div>
+          <h1 className="brand">
+            Daz<span>EMI</span>
+          </h1>
+          <p className="tagline">
+            {tab === 'finance'
+              ? 'See your monthly loan payment as you move the sliders.'
+              : 'See your monthly lease payment as you move the sliders.'}
+          </p>
+        </div>
+      </header>
+
+      <div className="tab-switch" role="tablist" aria-label="Calculator">
+        <span
+          className={`tab-pill ${tab === 'lease' ? 'tab-pill-lease' : 'tab-pill-finance'}`}
+          aria-hidden="true"
+        />
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'finance'}
+          className={tab === 'finance' ? 'is-active' : undefined}
+          onClick={() => setTab('finance')}
+        >
+          Finance
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'lease'}
+          className={tab === 'lease' ? 'is-active' : undefined}
+          onClick={() => setTab('lease')}
+        >
+          Lease
+        </button>
+      </div>
+
+      <div className={tab === 'finance' ? 'panel-visible' : 'panel-hidden'} aria-hidden={tab !== 'finance'}>
+        <FinancePanel />
+      </div>
+      <div className={tab === 'lease' ? 'panel-visible' : 'panel-hidden'} aria-hidden={tab !== 'lease'}>
+        <LeasePanel />
+      </div>
     </main>
   )
 }
